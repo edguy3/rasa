@@ -1,5 +1,6 @@
 import logging
 import uuid
+import json
 from typing import Any, Awaitable, Callable, Dict, Iterable, List, Optional, Text
 
 from rasa.core.channels.channel import InputChannel, OutputChannel, UserMessage
@@ -103,7 +104,9 @@ class SocketIOOutput(OutputChannel):
 
         json_message.setdefault("room", recipient_id)
 
-        await self.sio.emit(self.bot_message_evt, **json_message)
+        rasa.shared.utils.io.raise_warning(f"send_custom_json '{json.dumps(json_message, indent=2, sort_keys=True)}' ",docs="ETG DEBUG")
+        await self.sio.emit(self.bot_message_evt, json_message)
+        # await self.sio.emit(self.bot_message_evt, response, room=socket_id)
 
     async def send_attachment(
         self, recipient_id: Text, attachment: Dict[Text, Any], **kwargs: Any
