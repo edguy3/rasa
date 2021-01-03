@@ -180,7 +180,7 @@ class OutputChannel:
         """Send a message to the client."""
         rasa.shared.utils.io.raise_warning(f"send_response '{json.dumps(message, indent=2, sort_keys=True)}' ",docs="ETG DEBUG")
         if message.get("quick_replies"):
-            rasa.shared.utils.io.raise_warning(f"quick_replies '{json.dumps(message, indent=2, sort_keys=True)}' ",docs="ETG DEBUG")
+            rasa.shared.utils.io.raise_warning("quick_replies' ",docs="ETG DEBUG")
             await self.send_quick_replies(
                 recipient_id,
                 message.pop("text"),
@@ -188,31 +188,31 @@ class OutputChannel:
                 **message,
             )
         elif message.get("buttons"):
-            rasa.shared.utils.io.raise_warning(f"buttons '{json.dumps(message, indent=2, sort_keys=True)}' ",docs="ETG DEBUG")
+            rasa.shared.utils.io.raise_warning("buttons' ",docs="ETG DEBUG")
             await self.send_text_with_buttons(
                 recipient_id, message.pop("text"), message.pop("buttons"), **message
             )
         elif message.get("text"):
-            rasa.shared.utils.io.raise_warning(f"text '{json.dumps(message, indent=2, sort_keys=True)}' ",docs="ETG DEBUG")
+            rasa.shared.utils.io.raise_warning("text' ",docs="ETG DEBUG")
             await self.send_text_message(recipient_id, message.pop("text"), **message)
 
         if message.get("custom"):
-            rasa.shared.utils.io.raise_warning(f"custom '{json.dumps(message, indent=2, sort_keys=True)}' ",docs="ETG DEBUG")
+            rasa.shared.utils.io.raise_warning("custom' ",docs="ETG DEBUG")
             await self.send_custom_json(recipient_id, message.pop("custom"), **message)
 
         # if there is an image we handle it separately as an attachment
         if message.get("image"):
-            rasa.shared.utils.io.raise_warning(f"image '{json.dumps(message, indent=2, sort_keys=True)}' ",docs="ETG DEBUG")
+            rasa.shared.utils.io.raise_warning("image' ",docs="ETG DEBUG")
             await self.send_image_url(recipient_id, message.pop("image"), **message)
 
         if message.get("attachment"):
-            rasa.shared.utils.io.raise_warning(f"image '{json.dumps(message, indent=2, sort_keys=True)}' ",docs="ETG DEBUG")
+            rasa.shared.utils.io.raise_warning("attachment' ",docs="ETG DEBUG")
             await self.send_attachment(
                 recipient_id, message.pop("attachment"), **message
             )
 
         if message.get("elements"):
-            rasa.shared.utils.io.raise_warning(f"image '{json.dumps(message, indent=2, sort_keys=True)}' ",docs="ETG DEBUG")
+            rasa.shared.utils.io.raise_warning("elements' ",docs="ETG DEBUG")
             await self.send_elements(recipient_id, message.pop("elements"), **message)
 
     async def send_text_message(

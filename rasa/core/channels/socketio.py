@@ -71,11 +71,12 @@ class SocketIOOutput(OutputChannel):
 
         # attach all buttons to the last text fragment
         for button in buttons:
+            title = button.get("title","title missing")
             messages[-1]["quick_replies"].append(
                 {
                     "content_type": "text",
-                    "title": button["title"],
-                    "payload": button["payload"],
+                    "title": title,
+                    "payload": button.get("payload",title)
                 }
             )
 
@@ -199,24 +200,28 @@ class SocketIOInput(InputChannel):
         @sio.on(self.user_message_evt, namespace=self.namespace)
         async def handle_message(sid: Text, data: Dict) -> Any:
             output_channel = SocketIOOutput(sio, self.bot_message_evt)
+            try:
+                logger.warning(f"Incoming Message socketIO::handle_message: sid:{sid} data:{json.dumps(data, indent=2)}")
+                if self.session_persistence:
+                    if not data.get("session_id"):
+                        rasa.shared.utils.io.raise_warning(
+                            "A message without a valid session_id "
+                            "was received. This message will be "
+                            "ignored. Make sure to set a proper "
+                            "session id using the "
+                            "`session_request` socketIO event."
+                        )
+                        return
+                    sender_id = data["session_id"]
+                else:
+                    sender_id = sid
 
-            if self.session_persistence:
-                if not data.get("session_id"):
-                    rasa.shared.utils.io.raise_warning(
-                        "A message without a valid session_id "
-                        "was received. This message will be "
-                        "ignored. Make sure to set a proper "
-                        "session id using the "
-                        "`session_request` socketIO event."
-                    )
-                    return
-                sender_id = data["session_id"]
-            else:
-                sender_id = sid
+                message = UserMessage(
+                    data["message"], output_channel, sender_id, input_channel=self.name(), metadata = data['customData']
+                )
+                await on_new_message(message)
+            except:
+                logger.error(f"Incoming Message Failure in socketIO::handle_message: sid:{sid} data:{json.dumps(data, indent=2)}")
 
-            message = UserMessage(
-                data["message"], output_channel, sender_id, input_channel=self.name()
-            )
-            await on_new_message(message)
 
         return socketio_webhook
