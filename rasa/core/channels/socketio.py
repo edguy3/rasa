@@ -216,6 +216,7 @@ class SocketIOInput(InputChannel):
                 else:
                     sender_id = sid
 
+                # GauravRoy48 Gaurav Roy - https://forum.rasa.com/t/getting-values-of-customdata-in-custom-action-in-python/21344
                 message = UserMessage(
                     data["message"], output_channel, sender_id, input_channel=self.name(), metadata = data['customData']
                 )
