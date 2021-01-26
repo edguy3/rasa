@@ -1,0 +1,9 @@
+FROM hubrasabase
+
+# change shell
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# the entry point
+EXPOSE 5005
+ENTRYPOINT ["cat"]
+CMD ["cat"]
