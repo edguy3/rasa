@@ -32,6 +32,7 @@ from sanic_jwt import Initialize, exceptions
 
 import rasa
 import rasa.core.utils
+import rasa.utils.common
 import rasa.shared.utils.common
 import rasa.shared.utils.io
 import rasa.utils.endpoints
@@ -170,8 +171,14 @@ def requires_auth(app: Sanic, token: Optional[Text] = None) -> Callable[[Any], A
             except ValueError:
                 return None
 
-        def sufficient_scope(request, *args: Any, **kwargs: Any) -> Optional[bool]:
-            jwt_data = request.app.auth.extract_payload(request)
+        async def sufficient_scope(
+            request, *args: Any, **kwargs: Any
+        ) -> Optional[bool]:
+            # This is a coroutine since `sanic-jwt==1.6`
+            jwt_data = await rasa.utils.common.call_potential_coroutine(
+                request.app.auth.extract_payload(request)
+            )
+
             user = jwt_data.get("user", {})
 
             username = user.get("username", None)
@@ -196,10 +203,13 @@ def requires_auth(app: Sanic, token: Optional[Text] = None) -> Callable[[Any], A
                 if isawaitable(result):
                     result = await result
                 return result
-            elif app.config.get("USE_JWT") and request.app.auth.is_authenticated(
-                request
+            elif app.config.get(
+                "USE_JWT"
+            ) and await rasa.utils.common.call_potential_coroutine(
+                # This is a coroutine since `sanic-jwt==1.6`
+                request.app.auth.is_authenticated(request)
             ):
-                if sufficient_scope(request, *args, **kwargs):
+                if await sufficient_scope(request, *args, **kwargs):
                     result = f(request, *args, **kwargs)
                     if isawaitable(result):
                         result = await result
@@ -526,7 +536,7 @@ def async_if_callback_url(f: Callable[..., Coroutine]) -> Callable:
                     )
                 # If an error happens, we send the error payload to the `callback_url`
                 payload = dict(json=e.error_info)
-                logger.debug(
+                logger.error(
                     "Error happened when processing request asynchronously. "
                     "Sending error to callback URL."
                 )
@@ -1129,12 +1139,18 @@ def create_app(
     async def _evaluate_model_using_test_set(
         model_path: Text, test_data_file: Text
     ) -> Dict:
+        logger.info("Starting model evaluation using test set.")
+
         eval_agent = app.agent
 
         if model_path:
             model_server = app.agent.model_server
             if model_server is not None:
+                model_server = model_server.copy()
                 model_server.url = model_path
+                # Set wait time between pulls to `0` so that the agent does not schedule
+                # a job to pull the model from the server
+                model_server.kwargs["wait_time_between_pulls"] = 0
             eval_agent = await _load_agent(
                 model_path, model_server, app.agent.remote_storage
             )
@@ -1156,6 +1172,7 @@ def create_app(
         )
 
     async def _cross_validate(data_file: Text, config_file: Text, folds: int) -> Dict:
+        logger.info(f"Starting cross-validation with {folds} folds.")
         importer = TrainingDataImporter.load_from_dict(
             config=None, config_path=config_file, training_data_paths=[data_file]
         )
