@@ -103,11 +103,7 @@ class SocketIOOutput(OutputChannel):
     ) -> None:
         """Sends custom json to the output"""
 
-        json_message.setdefault("room", recipient_id)
-
-        rasa.shared.utils.io.raise_warning(f"send_custom_json '{json.dumps(json_message, indent=2, sort_keys=True)}' ",docs="ETG DEBUG")
-        await self.sio.emit(self.bot_message_evt, json_message)
-        # await self.sio.emit(self.bot_message_evt, response, room=socket_id)
+        await self._send_message(recipient_id, json_message)
 
     async def send_attachment(
         self, recipient_id: Text, attachment: Dict[Text, Any], **kwargs: Any
